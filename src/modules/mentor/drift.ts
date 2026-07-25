@@ -127,6 +127,16 @@ export function findDrift(plan: Plan, build: Build): DriftReport {
     .filter((s) => !planIdByComponent.has(normalizeComponent(s.component)))
     .map((s) => s.component);
 
+  // Said out loud, not left to be inferred from a confidence component. A student who
+  // has logged their implement work but not yet run the tests gets a correct ordering
+  // claim with nothing tying it to an observed symptom, and MENTOR should volunteer
+  // that rather than presenting the claim as though it explained a real failure.
+  if (!build.failure) {
+    caveats.push(
+      'no failure was reported — this describes where the build left the plan, not the cause of ' +
+        'a symptom anyone has seen',
+    );
+  }
   if (unbuilt.length) caveats.push(`planned but never implemented: ${unbuilt.join(', ')}`);
   if (unplanned.length) caveats.push(`implemented but never planned: ${unplanned.join(', ')}`);
   if (plan.cyclic) {
@@ -290,10 +300,19 @@ function scoreConfidence(input: ScoreInput): ConfidenceBreakdown {
     },
     failureLink: {
       score: failureLinked,
+      // Three distinct states, not two. "does not link to any recorded step" read as
+      // though a failure had been reported and could not be matched, when the common
+      // case for a student mid-session is that they never reported one — they have
+      // tracked their implement work and not yet run the tests. Describing an absent
+      // input as a failed match is the kind of small dishonesty that makes the whole
+      // confidence breakdown less believable.
       weight: W.failureLink,
       reason: failureLinked
         ? `the reported failure is in a file this history covers (${build.failure?.file})`
-        : 'the reported failure does not link to any recorded step',
+        : build.failure
+          ? 'the reported failure does not link to any recorded step'
+          : 'no failure was reported, so nothing anchors this claim to something that ' +
+            'actually broke — record the test run to raise this',
     },
   };
 

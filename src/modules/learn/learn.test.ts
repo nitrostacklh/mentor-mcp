@@ -340,6 +340,43 @@ test('bridge ④→MENTOR: a checkpoint log becomes a build history that reprodu
   assert.equal(report.origin?.actualPosition, 2);
 });
 
+test('a tracked history with no test run yet says so, rather than implying a failure', () => {
+  // The realistic mid-session state: the student logged their implement work and has
+  // not run the tests. `record_progress` returns a build history with failure: null,
+  // and a model will pass that straight to explain_drift. The ordering claim is still
+  // sound, but nothing anchors it to a symptom anyone has seen — and MENTOR must
+  // volunteer that rather than presenting it as an explanation of a real failure.
+  const brief = pricingBrief();
+  const plan = bundledPlan();
+  const cps = deriveCheckpoints(brief, plan);
+  const idOf = (s: string) => cps.checkpoints.find((c) => c.subject === s)!.id;
+  const log = recordProgress(cps, null, [
+    { checkpoint: idOf('validate'), file: 'build/pricing.js', line: 8 },
+    { checkpoint: idOf('tax'), file: 'build/pricing.js', line: 12 },
+    { checkpoint: idOf('discount'), file: 'build/pricing.js', line: 14 },
+    { checkpoint: idOf('total'), file: 'build/pricing.js', line: 17 },
+  ]).log;
+
+  const report = findDrift(plan, buildFromProgress(cps, brief, log));
+
+  assert.equal(report.origin?.component, 'tax', 'the ordering claim still holds');
+  assert.equal(report.failure, null);
+  assert.match(report.caveats.join(' '), /no failure was reported/);
+  // And the confidence component must not describe an absent input as a failed match.
+  const reason = report.confidence.components.failureLink.reason;
+  assert.match(reason, /no failure was reported/);
+  assert.doesNotMatch(reason, /does not link to any recorded step/);
+});
+
+test('a reported failure that matches nothing still reads as an unlinked failure', () => {
+  const build = parseBuild({
+    ...JSON.parse(JSON.stringify(bundledBuild())),
+    failure: { test: 't', file: 'somewhere/else.js', line: 1, message: 'boom' },
+  });
+  const reason = findDrift(bundledPlan(), build).confidence.components.failureLink.reason;
+  assert.match(reason, /does not link to any recorded step/);
+});
+
 test('observed provenance scores above authored, and the reason says why', () => {
   const plan = bundledPlan();
   const authored = findDrift(plan, bundledBuild());
