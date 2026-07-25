@@ -2,18 +2,29 @@ import { McpApp, Module, ConfigModule } from '@nitrostack/core';
 import { MentorModule } from './modules/mentor/mentor.module.js';
 import { RosterModule } from './modules/learn/roster.module.js';
 import { CoachModule } from './modules/learn/coach.module.js';
+import { RegistrarModule } from './modules/registrar/registrar.module.js';
 import { SystemHealthCheck } from './health/system.health.js';
 
-// ── The three registered agents are three stages of ONE loop ──────────────────
+// ── The four registered agents are the stages of ONE loop ─────────────────────
 //
-// ROSTER → COACH → MENTOR, and a student cannot skip a stage:
+// REGISTRAR → ROSTER → COACH → MENTOR, and a student cannot skip a stage:
 //
+//   REGISTRAR who is asking, and where their work is kept. Anonymous is a real
+//            state, not a failure — a judge with no account can still drive the
+//            whole loop, which is why nothing here sits behind a hard guard.
 //   ROSTER   pick a product type, a project, and a role. Get the brief that says
 //            which components are yours and which ones another role hands you.
 //   COACH    check the design you drew actually covers your slice; turn it into
 //            checkpoints ordered by your own plan; record what you finish.
 //   MENTOR   when it breaks, name the decision that broke it — then refuse to fix
 //            it, and issue the concept as a flashcard once YOU have fixed it.
+//
+// REGISTRAR added persistence WITHOUT adding a save verb: `record_progress` gained
+// a server side invisibly. Its three tools are the parts a student must actually
+// ask for — am I saved, what was I doing, and (instructors only) how is the class.
+// There is deliberately no `query`/`execute_sql`: a generic database tool hands the
+// client's model arbitrary access to every student's record, and "the model only
+// runs safe queries" is not a security model.
 //
 // Gap 11 is the record of why this is three modules and not one bag of tools: in
 // an MCP app the tool list *is* the interface, and a flat surface of ten verbs
@@ -84,6 +95,7 @@ import { SystemHealthCheck } from './health/system.health.js';
     'You did not just write the bug; you designed it.',
   imports: [
     ConfigModule.forRoot(),
+    RegistrarModule,
     RosterModule,
     CoachModule,
     MentorModule

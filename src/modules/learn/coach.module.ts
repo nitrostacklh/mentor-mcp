@@ -18,13 +18,29 @@
  * (`mentor/build.ts`), whereas a checkpoint log was written as the work occurred
  * and scores `observed`. The confidence rises because the evidence improved.
  *
- * ## Everything here is pure, and that is a deployment constraint
+ * ## The client is still a valid store; the server is now also one
  *
- * On NitroCloud this is a remote server with no per-student storage, so
- * `record_progress` takes the prior log and returns the new one rather than
- * keeping it. The client holds the state. Same reasoning as the bundled fixtures
- * (`ARCHITECTURE.md` §15) — a tool that needed a local file would work in Studio
- * and fail live.
+ * These tools were written pure: `record_progress` took the prior log and returned
+ * the new one, and the client held the state. That was right for a stateless
+ * deploy and it had one real cost — close the conversation and the work was gone.
+ *
+ * REGISTRAR added a server-side drawer, and it is wired in **invisibly**: no save
+ * tool, no extra call, no new verb on the surface. Saving is a consequence of
+ * working. Two rules make that safe:
+ *
+ * 1. **The client log wins, and anonymous callers are fully stateless.** A caller
+ *    that passes a log is the authority; the stored copy is only a fallback, and
+ *    only for an *authenticated* identity. Anonymous never reads or writes storage
+ *    — every anonymous caller would share one drawer, so one judge's run would
+ *    surface in the next judge's session and the demo would stop being
+ *    deterministic. `npm run walk` caught exactly that regression.
+ * 2. **A storage failure never loses the student their work.** The log still comes
+ *    back in full, and `saved` reports what actually happened — including when
+ *    storage is not durable, which on NitroCloud's Node 20 image it will not be
+ *    (see `registrar/store.ts`).
+ *
+ * So the pure path still works exactly as before, and nothing here requires a
+ * database to exist.
  */
 
 import {
@@ -47,6 +63,8 @@ import {
   type ProgressLog,
 } from './checkpoints.js';
 import { bundledBrief, bundledProjectArtifacts } from './fixtures.learn.js';
+import { resolveIdentity } from '../registrar/identity.js';
+import { progressStore, saveRun } from '../registrar/registrar.module.js';
 
 const artifact = z
   .union([z.string(), z.record(z.unknown())])
@@ -259,17 +277,60 @@ export class CoachTools {
     if (isError(r)) return r;
 
     const cps = deriveCheckpoints(r.brief, r.plan);
-    const result = recordProgress(cps, parseLog(input.log), input.reached ?? []);
+
+    // Prefer the log the client sent; fall back to whatever REGISTRAR has stored for
+    // this identity. That ordering matters — the client is the authority when it has
+    // state, so a caller that has been tracking its own log is never silently
+    // overwritten by a staler server copy.
+    const identity = resolveIdentity(ctx);
+    let prior = parseLog(input.log);
+    if (!prior && identity.authenticated) {
+      const { store } = await progressStore();
+      prior = (await store.load(identity.id, input.project, input.role))?.log ?? null;
+    }
+
+    const result = recordProgress(cps, prior, input.reached ?? []);
     const build = buildFromProgress(cps, r.brief, result.log);
+
+    // Persistence is a consequence of working, not a thing to remember: no save tool,
+    // no extra call. A storage failure must not lose the student the work they just
+    // did, so it degrades to "we could not keep this" rather than throwing.
+    let persisted: { saved: boolean; durable?: boolean; note: string };
+    try {
+      persisted = identity.authenticated
+        ? await saveRun(identity, input.project, input.role, result.log)
+        : {
+            saved: false,
+            note:
+              'Not saved — you are anonymous. Anonymous callers are deliberately stateless: ' +
+              'sharing one drawer between everyone who connects would leak one caller’s ' +
+              'progress into the next, and make the demo non-deterministic. Keep the log below, ' +
+              'or connect with a token to have it kept for you.',
+          };
+    } catch (err) {
+      persisted = {
+        saved: false,
+        note:
+          'Your progress was NOT saved server-side: ' +
+          (err instanceof Error ? err.message : String(err)) +
+          '. Keep the log below — it is the record.',
+      };
+    }
+
     ctx.logger.info('record_progress', {
       accepted: result.accepted.length,
       rejected: result.rejected.length,
       outOfOrder: result.outOfOrder.length,
+      student: identity.id,
+      saved: persisted.saved,
     });
 
     return {
-      // Hand the whole log back — the client is the store.
+      // Still handed back in full. The server storing a copy does not make the client
+      // stop being a valid store — and on a deployment without durable storage it is
+      // the only one that survives a restart.
       log: result.log,
+      saved: persisted,
       accepted: result.accepted,
       rejected: result.rejected,
       remaining: result.remaining,
@@ -316,7 +377,15 @@ export class CoachTools {
     if (isError(r)) return r;
 
     const cps = deriveCheckpoints(r.brief, r.plan);
-    const verdict = judgeDone(r.brief, r.plan, cps, parseLog(input.log));
+    // Same precedence as record_progress: client log wins, stored log is the fallback,
+    // so "am I done" can be asked in a fresh conversation without re-uploading anything.
+    const identity = resolveIdentity(ctx);
+    let log = parseLog(input.log);
+    if (!log && identity.authenticated) {
+      const { store } = await progressStore();
+      log = (await store.load(identity.id, input.project, input.role))?.log ?? null;
+    }
+    const verdict = judgeDone(r.brief, r.plan, cps, log);
     ctx.logger.info('is_it_done', { done: verdict.done, blocking: verdict.blocking.length });
 
     return {

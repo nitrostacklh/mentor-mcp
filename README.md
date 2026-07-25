@@ -61,7 +61,7 @@ npm run build
 npm test
 ```
 
-`npm test` is **109/109 and fully offline**. Then point **NitroStudio** at this folder, or
+`npm test` is **128/128 and fully offline**. Then point **NitroStudio** at this folder, or
 connect any MCP client, and ask *"a student's pricing test is failing — when did they go
 wrong?"* → `explain_drift` renders the **causal-timeline** widget. Then ask it to fix the
 bug and watch `withhold_fix` decline. That refusal is the product, not a missing feature.
@@ -70,9 +70,15 @@ bug and watch `withhold_fix` decline. That refusal is the product, not a missing
 
 ## The tool surface is deliberately one story
 
-`tools/list` returns **10 tools** and all 10 are stages of the loop above. That is a design
-constraint rather than an accident: in an MCP app the tool list *is* the interface, because
-the client's model picks from it.
+`tools/list` returns **13 tools**: the ten stages of the loop above, plus three from
+**REGISTRAR** — `whoami`, `resume` and `class_progress` — which cover identity and picking up
+work from a previous session. That is a design constraint rather than an accident: in an MCP
+app the tool list *is* the interface, because the client's model picks from it.
+
+Notably persistence itself added **no** verbs. There is no `save`, and deliberately no
+`query` or `execute_sql`: a generic database tool would hand the client's model arbitrary
+access to every student's record, and "the model only runs safe queries" is not a security
+model. `record_progress` simply gained a server side.
 
 You will also find `src/modules/` for **SENTINEL** (DevOps), **LEDGER** (FinOps), **VERDICT**
 (Legal), **RELAY** (Civic), **AEGIS** (trust) and a **COMMAND** coordinator — tests passing,
