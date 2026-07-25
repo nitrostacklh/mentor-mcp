@@ -33,57 +33,53 @@ export const PRICING_PLAN_JSON = `{
   "nodes": [
     {
       "id": "n-validate",
-      "type": "script",
+      "type": "component",
       "label": "validate",
       "position": { "x": 0, "y": 160 },
       "data": {
         "label": "validate",
         "component": "validate",
-        "intent": "Reject malformed carts before any money is computed.",
-        "code": "assertItems(items); assertRate(discountRate); assertRate(taxRate);"
+        "intent": "Reject malformed carts before any money is computed."
       }
     },
     {
       "id": "n-discount",
-      "type": "script",
+      "type": "component",
       "label": "discount",
       "position": { "x": 260, "y": 160 },
       "data": {
         "label": "discount",
         "component": "discount",
-        "intent": "Apply the discount code to the subtotal.",
-        "code": "discount = subtotal * discountRate"
+        "intent": "Apply the discount code to the subtotal."
       }
     },
     {
       "id": "n-tax",
-      "type": "script",
+      "type": "component",
       "label": "tax",
       "position": { "x": 520, "y": 160 },
       "data": {
         "label": "tax",
         "component": "tax",
-        "intent": "Tax the DISCOUNTED amount. Must run after discount.",
-        "code": "tax = taxable * taxRate"
+        "intent": "Tax the DISCOUNTED amount. Must run after discount."
       }
     },
     {
       "id": "n-total",
-      "type": "script",
+      "type": "component",
       "label": "total",
       "position": { "x": 780, "y": 160 },
       "data": {
         "label": "total",
         "component": "total",
-        "intent": "Sum and round to 2dp.",
-        "code": "return round(taxable + tax, 2)"
+        "intent": "Sum and round to 2dp."
       }
     }
   ],
   "edges": [
-    { "id": "e1", "source": "n-validate", "target": "n-discount", "sourceHandle": null, "targetHandle": null },
-    { "id": "e2", "source": "n-discount", "target": "n-tax", "sourceHandle": null, "targetHandle": null },
-    { "id": "e3", "source": "n-tax", "target": "n-total", "sourceHandle": null, "targetHandle": null }
+    { "id": "e1", "source": "n-validate", "target": "n-discount", "sourceHandle": "output", "targetHandle": "input" },
+    { "id": "e2", "source": "n-discount", "target": "n-tax", "sourceHandle": "output", "targetHandle": "input" },
+    { "id": "e3", "source": "n-tax", "target": "n-total", "sourceHandle": "output", "targetHandle": "input" }
   ],
   "order": ["n-validate", "n-discount", "n-tax", "n-total"],
   "entry": ["n-validate"],

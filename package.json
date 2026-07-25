@@ -1,9 +1,9 @@
 {
-  "name": "sentinel-mcp",
+  "name": "mentor",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "SENTINEL autonomous incident commander MCP app",
+  "description": "MENTOR — shows a student when their build stopped matching their design, and refuses to write the fix",
   "scripts": {
     "dev": "nitrostack-cli dev",
     "build": "nitrostack-cli build",

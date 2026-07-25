@@ -47,7 +47,9 @@ deploy; together, `command` runs them as one AEGIS-governed operation.
 ## Current status
 
 - ✅ Shared engine core + explainable confidence gate (framework-free, unit-tested).
-- ✅ **All five commanders + the COMMAND coordinator** implemented and self-contained.
+- ✅ **All five commanders + the COMMAND coordinator** implemented and self-contained — but
+  **not registered** in `app.module.ts`. Only MENTOR is exposed as MCP tools; see
+  `../GAPS.md` Gap 11. Their tests still run and still pass.
 - ✅ **AEGIS guards every commander** (injected engine `guard`, runs before any deploy) — an unsafe action is blocked even at high confidence.
 - ✅ **Organization mode** (`run_organization`): a commander pulls in a teammate mid-task and waits — LEDGER hits a code-caused spike, hands it to SENTINEL, continues after the fix; VERDICT + RELAY handle downstream. Real delegation + synchronization, all AEGIS-gated.
 - ✅ **MissionTrace glass-box widget** — renders status, the confidence gate, the live trace, and the diff (bundles cleanly).

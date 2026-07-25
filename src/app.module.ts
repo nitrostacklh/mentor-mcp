@@ -1,29 +1,53 @@
 import { McpApp, Module, ConfigModule } from '@nitrostack/core';
-import { SentinelModule } from './modules/sentinel/sentinel.module.js';
-import { LedgerModule } from './modules/ledger/ledger.module.js';
-import { VerdictModule } from './modules/verdict/verdict.module.js';
-import { RelayModule } from './modules/relay/relay.module.js';
-import { AegisModule } from './modules/aegis/aegis.module.js';
-import { CommandModule } from './modules/command/command.module.js';
 import { MentorModule } from './modules/mentor/mentor.module.js';
 import { SystemHealthCheck } from './health/system.health.js';
 
+// ── The other five commanders — built, tested, and deliberately NOT registered ──
+//
+// SENTINEL·DevOps, LEDGER·FinOps, VERDICT·Legal, RELAY·Civic, AEGIS·Trust and the
+// COMMAND coordinator all still live in `modules/` with their tests green. They are
+// unregistered rather than deleted, because in an MCP app the tool list *is* the
+// interface: the client's model picks from it. Twenty extra tools next to MENTOR's
+// three cost us three ways —
+//
+//   1. SENTINEL's `self_heal` runs on the *same* bundled pricing service and the
+//      *same* `tax-before-discount` bug as MENTOR's fixture, and its description
+//      promises to patch, prove and deploy. Ask a model "the pricing test is
+//      failing, help" and it picks the actionable tool. MENTOR's entire thesis is
+//      refusing to hand over the patch; shipping a sibling tool that hands it over
+//      contradicts the pitch live, on our own bug.
+//   2. `propose_patch` / `run_tests` / `resolve_incident` are write-to-source tools.
+//      MENTOR proves it cannot modify a student's build (`awaitRecovery` asserts the
+//      source is byte-identical). That proof is much weaker on a server that also
+//      exposes tools which rewrite source.
+//   3. RELAY autofills a masked Aadhaar and files a mock government application.
+//      Not a question worth spending demo time on in an education submission.
+//
+// The Research claim in MENTOR-CONCEPT.md §6 is that the *engine* generalizes across
+// unrelated domains. That is evidenced by five adapters against one lifecycle with
+// passing tests — it does not require the tools to be live in the judge's client.
+// Re-enable by uncommenting the import and the `imports:` entry.
+//
+// import { SentinelModule } from './modules/sentinel/sentinel.module.js';
+// import { LedgerModule } from './modules/ledger/ledger.module.js';
+// import { VerdictModule } from './modules/verdict/verdict.module.js';
+// import { RelayModule } from './modules/relay/relay.module.js';
+// import { AegisModule } from './modules/aegis/aegis.module.js';
+// import { CommandModule } from './modules/command/command.module.js';
+
 /**
- * Root Application Module — the COMMAND platform.
+ * Root Application Module — MENTOR.
  *
- * Six standalone commanders (SENTINEL·DevOps, LEDGER·FinOps, VERDICT·Legal,
- * RELAY·Civic, AEGIS·Trust, MENTOR·Education) share one engine core, plus a
- * COMMAND coordinator that runs the fleet as one governed operation.
- *
- * MENTOR is the odd one out and the reason the core/adapter split earns its keep:
- * the other five resolve an incident by changing something, MENTOR resolves one by
- * *explaining* it and refusing to change anything. Same engine, inverted intent —
- * see `modules/mentor/mentor.adapter.ts`.
+ * MENTOR is one `DomainAdapter` on the shared explainability engine in `core/`. The
+ * engine runs five other domains (see the note above); MENTOR is the one that
+ * inverts it — the other five resolve an incident by *changing* something, MENTOR
+ * resolves one by explaining it and refusing to change anything. Same lifecycle,
+ * inverted intent: `modules/mentor/mentor.adapter.ts`, `ARCHITECTURE.md` §7.6.
  */
 @McpApp({
   module: AppModule,
   server: {
-    name: 'command-platform',
+    name: 'mentor',
     version: '1.0.0'
   },
   logging: {
@@ -33,15 +57,10 @@ import { SystemHealthCheck } from './health/system.health.js';
 @Module({
   name: 'app',
   description:
-    'COMMAND — autonomous enterprise OS (SENTINEL · LEDGER · VERDICT · RELAY · AEGIS · MENTOR)',
+    'MENTOR — shows a student the moment their build stopped matching the architecture ' +
+    'they designed, and refuses to write the fix. You did not just write the bug; you designed it.',
   imports: [
     ConfigModule.forRoot(),
-    SentinelModule,
-    LedgerModule,
-    VerdictModule,
-    RelayModule,
-    AegisModule,
-    CommandModule,
     MentorModule
   ],
   providers: [
@@ -50,4 +69,3 @@ import { SystemHealthCheck } from './health/system.health.js';
   ]
 })
 export class AppModule {}
-
