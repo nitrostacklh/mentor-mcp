@@ -1,111 +1,105 @@
-# SENTINEL — leader app of the COMMAND platform
+# MENTOR — you didn't just write the bug. You designed it.
 
-**SENTINEL** is an autonomous incident commander built as a **NitroStack MCP app**: it detects a broken system, fixes it, proves the fix, scores its own confidence, deploys — or pauses for a human when unsure — and reports. It is the flagship of **COMMAND**, a set of five standalone MCP apps that share one engine and compose into a governed "autonomous enterprise OS."
+> **Track:** Education & Research · an MCP app built on the official NitroStack TypeScript SDK
+>
+> Copilot finishes your code. This one makes you finish it — it shows you the exact moment
+> your build stopped matching the architecture you designed, and then it stops.
 
-Built for the Amrita Vishwa Vidyapeetham × NitroStack Agentic AI Hackathon.
+**This repository is the deployable half of a larger submission.** It is the NitroStack MCP
+app, and it is what runs on NitroCloud. The full project — the design canvas the student
+draws in, the demo fixtures, the concept doc and the gap list — lives at
+**[nitrostacklh/command-global](https://github.com/nitrostacklh/command-global)**, and this
+folder is mirrored out of it so NitroCloud sees a plain NitroStack project at a repo root.
 
-> **New to this project? Read [`ARCHITECTURE.md`](./ARCHITECTURE.md)** — a complete,
-> from-zero walkthrough: what every file does, how the pieces work together at runtime,
-> an FAQ, and exactly what's left to finish. This README is the quick overview;
-> `ARCHITECTURE.md` is the deep guide; [`DEPLOY.md`](./DEPLOY.md) is the deploy runbook.
+> ⚠️ **Do not commit here.** This is a **one-way mirror** of `sentinel/` in the monorepo,
+> pushed with `git subtree`. Anything committed directly to this repo is clobbered by the
+> next mirror push. Send changes to
+> [command-global](https://github.com/nitrostacklh/command-global) instead.
 
 ---
 
-## Architecture
+## What it does
 
-The value is the **domain-agnostic engine core** (`src/core/`, zero framework dependency) plus thin **domain adapters**. Every app is `core + one adapter`.
+A student picks a real project and **a role on it**, gets the slice they would actually own
+in a company, designs that slice, builds it against checkpoints derived from their own
+design — and when it breaks MENTOR names the decision that broke it, **then refuses to write
+the fix.**
+
+Six stages, each handing the next a versioned plain-JSON artifact. That is the whole
+architecture: no shared types, no RPC, no database.
 
 ```
-src/
-├── index.ts                 # bootstrap (McpApplicationFactory)
-├── app.module.ts            # @McpApp root — registers feature modules
-├── core/                    # THE SHARED SPINE (framework-free, unit-tested)
-│   ├── types.ts             # Incident, Verdict, ToolResult, BlastRadius
-│   ├── confidence.ts        # explainable autonomy gate (the HITL threshold)
-│   ├── adapter.ts           # DomainAdapter interface — implement this per domain
-│   ├── engine.ts            # detect→verify→gate→deploy→report lifecycle
-│   └── engine.test.ts       # offline spine tests (no model, no network)
-├── modules/
-│   ├── sentinel/            # SENTINEL · DevOps — self-heal a broken service
-│   ├── ledger/              # LEDGER   · FinOps — rightsize cloud spend
-│   ├── verdict/             # VERDICT  · Legal  — cited contract redline
-│   ├── relay/               # RELAY    · Civic  — file & track scheme applications
-│   ├── aegis/               # AEGIS    · Trust  — guardrail all actions route through
-│   └── command/             # COMMAND         — coordinator: runs the whole fleet, governed
-├── health/                  # system health check
-└── widgets/                 # React widgets (glass-box UI)
+①  browse_catalog    pick a product type, then a project    mentor.catalog/v1
+②  open_brief        what you OWN vs what you're GIVEN      mentor.brief/v1
+③  (design canvas)   the architecture you drew, pre-code    lumina.plan/v1
+④  checkpoints       from YOUR plan · record_progress · is_it_done
+                                                            mentor.build/v1
+⑤  explain_drift     where the build left the plan — then it refuses to fix it
+⑥  flashcard         the concept, released only once YOU made the tests pass
+                                                            mentor.card/v1
 ```
 
-Five standalone commanders + a coordinator, all on one engine. Each `*/` module
-is independently usable (its own tools + prompt) and could be split into its own
-deploy; together, `command` runs them as one AEGIS-governed operation.
+Stage ③ runs locally and is not deployed; the two halves meet at exactly one plain-JSON file.
+That decoupling is also why MENTOR demos standalone — every artifact argument is optional and
+falls back to a bundled demo project.
 
-**Why the engine has no LLM loop:** in MCP, the connecting client model (ChatGPT / NitroStudio AI Chat) *is* the agent. The engine exposes a `planner` seam (client-driven, a Task strategy, or a test script drive it) and an `approvalGate` seam (mapped to MCP's native tool-approval for HITL). It never calls a model directly — so it's fully testable offline.
+**Two kinds of drift.** `check_scope` catches designing the *wrong set* of components —
+someone else's job, or missing your own. `explain_drift` catches building *your* components
+in the wrong order. Different failures, different conversations.
 
----
-
-## Current status
-
-- ✅ Shared engine core + explainable confidence gate (framework-free, unit-tested).
-- ✅ **All five commanders + the COMMAND coordinator** implemented and self-contained — but
-  **not registered** in `app.module.ts`. Only MENTOR is exposed as MCP tools; see
-  `../GAPS.md` Gap 11. Their tests still run and still pass.
-- ✅ **AEGIS guards every commander** (injected engine `guard`, runs before any deploy) — an unsafe action is blocked even at high confidence.
-- ✅ **Organization mode** (`run_organization`): a commander pulls in a teammate mid-task and waits — LEDGER hits a code-caused spike, hands it to SENTINEL, continues after the fix; VERDICT + RELAY handle downstream. Real delegation + synchronization, all AEGIS-gated.
-- ✅ **MissionTrace glass-box widget** — renders status, the confidence gate, the live trace, and the diff (bundles cleanly).
-- ✅ **Two ways to drive SENTINEL:** the one-click `self_heal` Task **and** the client-driven granular tools (`open_incident` → `read_source`/`run_tests` → `propose_patch` → `resolve_incident` → `approve_incident`) so ChatGPT orchestrates the loop itself — per-incident state persisted server-side, same gate + AEGIS + HITL.
-- ✅ `npm run build` compiles + bundles → `dist/`; **`npm test` → 32/32 passing**; org run + client-driven flow verified end-to-end.
-- 📗 **Deploy runbook:** see [`DEPLOY.md`](./DEPLOY.md) (NitroCloud + ChatGPT, ~15 min).
-- ⏳ Remaining: **only** the first NitroCloud deploy + ChatGPT connection (interactive — needs the organizer account). All code is deploy-ready.
-
-### Headline tools (per commander)
-
-| Commander | One-click Task | Read/observe |
-|---|---|---|
-| SENTINEL | `self_heal` (one-click); `open_incident`→`propose_patch`→`run_tests`→`resolve_incident`→`approve_incident` (client-driven) | `sentinel_status`, `assess_confidence`, `read_source`, `read_logs` |
-| LEDGER | `optimize_spend` | `cloud_cost_report` |
-| VERDICT | `redline_contract` | — |
-| RELAY | `apply_for_scheme` | — |
-| AEGIS | `guard` | `verify_output` |
-| COMMAND | `run_operation`, `run_organization` | `platform_status` |
-
-Each commander also ships an MCP **prompt** for the client-driven autonomy flow.
+**Why it needs no model.** In MCP the *client* supplies the model. MENTOR's own work is an
+ordering comparison, a weighted confidence formula and a refusal — there is nothing to
+generate. So it runs offline: no API key, no network, no per-student cost.
 
 ---
 
-## Setup
-
-Requires **Node 20.x** and npm.
+## Run it
 
 ```bash
-npm install          # root deps (widgets install on first build)
-npm run dev          # run locally; open in NitroStudio (App Canvas / AI Chat)
-npm run build        # production bundle → dist/
-npm test             # build + run the offline engine tests
+npm install
+npm run build
+npm test
 ```
 
-## Deploy (NitroCloud → ChatGPT)
-
-1. Push this repo to GitHub.
-2. NitroCloud → **Create App** → **Connect Repository** → enable **auto-deploy** (every push redeploys).
-3. When the deployment is **Live**, copy the Service URL and connect `{serviceUrl}/sse` to **ChatGPT** (Developer Mode).
-
-> Never commit secrets. `.env` and keys are git-ignored; put credentials in NitroCloud / NitroStudio, not in the repo.
+`npm test` is **109/109 and fully offline**. Then point **NitroStudio** at this folder, or
+connect any MCP client, and ask *"a student's pricing test is failing — when did they go
+wrong?"* → `explain_drift` renders the **causal-timeline** widget. Then ask it to fix the
+bug and watch `withhold_fix` decline. That refusal is the product, not a missing feature.
 
 ---
 
-## Adding a domain (for teammates)
+## The tool surface is deliberately one story
 
-Each sibling app is one file's worth of real work against the core:
+`tools/list` returns **10 tools** and all 10 are stages of the loop above. That is a design
+constraint rather than an accident: in an MCP app the tool list *is* the interface, because
+the client's model picks from it.
 
-1. Implement `DomainAdapter` (`src/core/adapter.ts`) — `openContext`, `executeTool`, `verificationPassed`, `blastRadius`, `diff`, `deploy`, `awaitRecovery`, `report`, plus the `submitTool` / `verifyTool` / `mutationTools` metadata.
-2. Wrap it in a NitroStack module: expose the actuators as `@Tool`s, the self-heal loop as a Task that runs `new Engine(adapter, { planner, approvalGate, onEvent })`, and a widget for the trace.
-3. Reuse `core/confidence.ts` for the gate — do not reinvent scoring.
+You will also find `src/modules/` for **SENTINEL** (DevOps), **LEDGER** (FinOps), **VERDICT**
+(Legal), **RELAY** (Civic), **AEGIS** (trust) and a **COMMAND** coordinator — tests passing,
+and **none of them registered** in `app.module.ts`.
 
-The engine, gate, and HITL are inherited; only the domain logic is new.
+That is on purpose, and it is the interesting decision in this repo. The project began as
+COMMAND, a five-app "autonomous enterprise OS"; MENTOR is a deliberate pivot away from it.
+Those four commanders still work. They stay unregistered because SENTINEL's `self_heal` runs
+on the **same** pricing service and the **same** tax-before-discount bug as MENTOR's demo
+fixture, and its description offers to patch, prove and deploy the fix. Ask a model *"the
+pricing test is failing, help"* with that tool present and it picks the actionable one —
+contradicting MENTOR's entire thesis, live, on our own bug.
 
-## Configuration
+Killing four working commanders was worth more than the code was. Full reasoning in
+[`GAPS.md`](https://github.com/nitrostacklh/command-global/blob/main/GAPS.md) Gap 11 and the
+comment at the top of `src/app.module.ts`.
 
-| Env var | Default | Meaning |
-|---|---|---|
-| `SENTINEL_CONFIDENCE_THRESHOLD` | `0.80` | Score at/above which fixes act autonomously; below pauses for human approval. |
+---
+
+## Read more, in the monorepo
+
+| | |
+|---|---|
+| [`MENTOR-CONCEPT.md`](https://github.com/nitrostacklh/command-global/blob/main/MENTOR-CONCEPT.md) | **Start here** — the product, and why it survives "isn't this Copilot?" |
+| [`ARCHITECTURE.md`](https://github.com/nitrostacklh/command-global/blob/main/ARCHITECTURE.md) | The one engine every commander runs on |
+| [`GAPS.md`](https://github.com/nitrostacklh/command-global/blob/main/GAPS.md) | What's left — prioritized and honest |
+| [`WALKTHROUGH.md`](https://github.com/nitrostacklh/command-global/blob/main/WALKTHROUGH.md) | Use it as a student, in a real MCP client |
+| [`STUDY.md`](https://github.com/nitrostacklh/command-global/blob/main/STUDY.md) | The evidence protocol — designed, **not yet run** |
+
+Built for the Amrita Vishwa Vidyapeetham × NitroStack Agentic AI Hackathon.
