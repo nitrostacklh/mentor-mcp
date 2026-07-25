@@ -25,8 +25,12 @@ import { findDrift } from './drift.js';
 import { parsePlan } from '../../shared/plan.js';
 import { parseBuild } from './build.js';
 import { requireBuild, requirePlan, PRICING_SYMPTOM } from './fixtures.demo.js';
-import { issueCard, readTestOutcome } from '../learn/card.js';
-import { bundledBrief, bundledProjectArtifacts } from '../learn/fixtures.learn.js';
+
+// `flashcard` used to live here. It moved to MCP-3 (`mcp-profile/src/cards.module.ts`)
+// when the app split in three, and issuing a card from MCP-2 is now a contradiction
+// rather than a duplication: the card's answer side is the one thing this process is
+// architecturally not allowed to hold (`shared/README.md`). MCP-2 finds the drift and
+// files the verdict; MCP-3 turns that verdict into a card, and gates it.
 
 /** Accepts either a JSON string or an already-parsed object from the client. */
 const artifact = z
@@ -139,92 +143,6 @@ export class MentorTools {
       not_a_limitation:
         'This is the product, not a missing feature. A tool that hands you the patch removes the lesson.',
     };
-  }
-
-  @Tool({
-    name: 'flashcard',
-    description:
-      'Issue the flashcard a student earned by finishing — the transferable concept behind the bug ' +
-      'they just fixed, tied to the file:line where they actually went wrong. Requires the real ' +
-      'output of their test command: the card is the reward for fixing it THEMSELVES, so until the ' +
-      'tests are green the answer side is not included in the response at all. Do not attempt to ' +
-      'supply the answer yourself if this tool withholds it.',
-    inputSchema: z.object({
-      project: z.string().describe('Project key, e.g. "pricing".'),
-      role: z.string().describe('Role key, e.g. "backend".'),
-      test_output: z
-        .string()
-        .describe(
-          'Verbatim output of the student\'s test command. Parsed for a pass/fail verdict — ' +
-            'unrecognised output is treated as not passing.',
-        ),
-      plan: artifact,
-      build: artifact,
-      explained_in_own_words: z
-        .boolean()
-        .optional()
-        .describe('Set false if the student has not yet tried to state the idea themselves.'),
-    }),
-  })
-  async flashcard(
-    input: {
-      project: string;
-      role: string;
-      test_output: string;
-      plan?: unknown;
-      build?: unknown;
-      explained_in_own_words?: boolean;
-    },
-    ctx: ExecutionContext,
-  ) {
-    const brief = bundledBrief(input.project, input.role);
-    if (!brief) {
-      return {
-        error: `no brief for ${input.project}/${input.role} — call browse_catalog for playable roles`,
-      };
-    }
-
-    const outcome = readTestOutcome(input.test_output);
-
-    // The drift is what makes the card *theirs* rather than a topic from a
-    // syllabus, so it is computed from the same artifacts explain_drift uses.
-    // A missing or unreadable pair is not fatal — a card with no provenance is
-    // weaker but still honest, whereas refusing outright would punish a student
-    // for a tooling gap.
-    let drift = null;
-    try {
-      const plan =
-        input.plan === undefined
-          ? input.project === 'pricing'
-            ? requirePlan()
-            : (bundledProjectArtifacts(input.project)?.plan ?? null)
-          : parsePlan(input.plan);
-      const build =
-        input.build === undefined
-          ? input.project === 'pricing'
-            ? requireBuild()
-            : (bundledProjectArtifacts(input.project)?.build ?? null)
-          : parseBuild(input.build);
-      if (plan && build) drift = findDrift(plan, build);
-    } catch (err) {
-      ctx.logger.info('flashcard: drift unavailable', {
-        why: err instanceof Error ? err.message : String(err),
-      });
-    }
-
-    const card = issueCard({
-      brief,
-      drift,
-      testsGreen: outcome.green,
-      explainedInOwnWords: input.explained_in_own_words,
-    });
-    ctx.logger.info('flashcard', {
-      project: input.project,
-      earned: card.earned,
-      runner: outcome.runner ?? '(unrecognised)',
-    });
-
-    return { ...card, test_verdict: outcome };
   }
 
   @Tool({

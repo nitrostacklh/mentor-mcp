@@ -1,38 +1,33 @@
 import { McpApp, Module, ConfigModule } from '@nitrostack/core';
 import { MentorModule } from './modules/mentor/mentor.module.js';
-import { RosterModule } from './modules/learn/roster.module.js';
-import { CoachModule } from './modules/learn/coach.module.js';
-import { RegistrarModule } from './modules/registrar/registrar.module.js';
 import { SystemHealthCheck } from './health/system.health.js';
 
-// ── The four registered agents are the stages of ONE loop ─────────────────────
+// ── MCP-2 of three. One stage of the loop, not the whole of it ────────────────
 //
-// REGISTRAR → ROSTER → COACH → MENTOR, and a student cannot skip a stage:
+// MENTOR is three deployed MCP applications, and this one is the middle of them:
 //
-//   REGISTRAR who is asking, and where their work is kept. Anonymous is a real
-//            state, not a failure — a judge with no account can still drive the
-//            whole loop, which is why nothing here sits behind a hard guard.
-//   ROSTER   pick a product type, a project, and a role. Get the brief that says
-//            which components are yours and which ones another role hands you.
-//   COACH    check the design you drew actually covers your slice; turn it into
-//            checkpoints ordered by your own plan; record what you finish.
-//   MENTOR   when it breaks, name the decision that broke it — then refuse to fix
-//            it, and issue the concept as a flashcard once YOU have fixed it.
+//   MCP-1  roster    role → the projects that role exists on → the brief → the
+//                    checkpoint spec. Lives in `mcp-roster/`.
+//   MCP-2  sentinel  ← this app. Verifies each gate against the build, finds the
+//                    drift, files the verdict — and refuses to write the fix.
+//   MCP-3  profile   the student record, and the flashcards made from the drift
+//                    this app found. Lives in `mcp-profile/`.
 //
-// REGISTRAR added persistence WITHOUT adding a save verb: `record_progress` gained
-// a server side invisibly. Its three tools are the parts a student must actually
-// ask for — am I saved, what was I doing, and (instructors only) how is the class.
-// There is deliberately no `query`/`execute_sql`: a generic database tool hands the
-// client's model arbitrary access to every student's record, and "the model only
-// runs safe queries" is not a security model.
+// REGISTRAR, ROSTER and COACH used to be registered here, when this was one server.
+// They moved to MCP-1 and MCP-3 in the three-way split and their imports here were
+// left behind, which is what broke this build. They are gone rather than commented
+// out: the modules no longer exist in this package, so there is nothing to re-enable.
 //
-// Gap 11 is the record of why this is three modules and not one bag of tools: in
-// an MCP app the tool list *is* the interface, and a flat surface of ten verbs
-// gives the client's model no way to tell which stage the student is in. Grouped
-// by agent, the shape of the loop is legible from `tools/list` alone.
+// The split is not filing cabinetry. MCP-3 is the only process that ever holds a
+// flashcard *answer*, so a bug anywhere in this app — a tool echoing its input, a
+// log line, a widget rendering a raw artifact — cannot leak the thing the student is
+// supposed to earn. Not having the data protects against more than a flag does
+// (`shared/README.md`). Adding a tool here that needs an answer is the signal that
+// it belongs in MCP-3.
 //
-// The test each new tool had to pass was not "is it useful" but "is it the same
-// story". Anything that failed that test is still unregistered below.
+// Gap 11 is the record of why the surface stays this narrow: in an MCP app the tool
+// list *is* the interface, and the test each tool has to pass is not "is it useful"
+// but "is it the same story".
 
 // ── The other five commanders — built, tested, and deliberately NOT registered ──
 //
@@ -95,9 +90,6 @@ import { SystemHealthCheck } from './health/system.health.js';
     'You did not just write the bug; you designed it.',
   imports: [
     ConfigModule.forRoot(),
-    RegistrarModule,
-    RosterModule,
-    CoachModule,
     MentorModule
   ],
   providers: [
