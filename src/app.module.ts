@@ -1,6 +1,27 @@
 import { McpApp, Module, ConfigModule } from '@nitrostack/core';
 import { MentorModule } from './modules/mentor/mentor.module.js';
+import { RosterModule } from './modules/learn/roster.module.js';
+import { CoachModule } from './modules/learn/coach.module.js';
 import { SystemHealthCheck } from './health/system.health.js';
+
+// ── The three registered agents are three stages of ONE loop ──────────────────
+//
+// ROSTER → COACH → MENTOR, and a student cannot skip a stage:
+//
+//   ROSTER   pick a product type, a project, and a role. Get the brief that says
+//            which components are yours and which ones another role hands you.
+//   COACH    check the design you drew actually covers your slice; turn it into
+//            checkpoints ordered by your own plan; record what you finish.
+//   MENTOR   when it breaks, name the decision that broke it — then refuse to fix
+//            it, and issue the concept as a flashcard once YOU have fixed it.
+//
+// Gap 11 is the record of why this is three modules and not one bag of tools: in
+// an MCP app the tool list *is* the interface, and a flat surface of ten verbs
+// gives the client's model no way to tell which stage the student is in. Grouped
+// by agent, the shape of the loop is legible from `tools/list` alone.
+//
+// The test each new tool had to pass was not "is it useful" but "is it the same
+// story". Anything that failed that test is still unregistered below.
 
 // ── The other five commanders — built, tested, and deliberately NOT registered ──
 //
@@ -57,10 +78,14 @@ import { SystemHealthCheck } from './health/system.health.js';
 @Module({
   name: 'app',
   description:
-    'MENTOR — shows a student the moment their build stopped matching the architecture ' +
-    'they designed, and refuses to write the fix. You did not just write the bug; you designed it.',
+    'MENTOR — pick a real project and a role on it, design your slice, build it against ' +
+    'checkpoints derived from your own design, and when it breaks be shown the moment your build ' +
+    'stopped matching the architecture you drew. Then fix it yourself: it refuses to. ' +
+    'You did not just write the bug; you designed it.',
   imports: [
     ConfigModule.forRoot(),
+    RosterModule,
+    CoachModule,
     MentorModule
   ],
   providers: [

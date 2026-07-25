@@ -53,8 +53,19 @@ export interface Build {
   readonly project: string;
   readonly entry: string;
   readonly tests: string;
-  /** `git` = derived from real history; `authored` = hand-written (discounted). */
-  readonly provenance: 'git' | 'authored';
+  /**
+   * How much this timeline can be trusted, in descending order:
+   *
+   * - `git` — derived from real commits. Nobody's memory is involved.
+   * - `observed` — recorded by the checkpoint tracker as the work happened
+   *   (`learn/checkpoints.ts`). The sequence was witnessed, but the student is
+   *   the one who said "done" each time, so it is self-reported rather than
+   *   anchored to an artifact.
+   * - `authored` — written afterwards by hand. A claim about the past.
+   *
+   * Scored in `drift.ts`, not merely recorded here.
+   */
+  readonly provenance: 'git' | 'observed' | 'authored';
   readonly steps: readonly BuildStep[];
   readonly failure: BuildFailure | null;
   readonly warnings: readonly string[];
@@ -115,8 +126,12 @@ export function parseBuild(input: unknown): Build {
   // the right actual-order rather than a silently wrong drift claim.
   steps.sort((a, b) => a.seq - b.seq || a.component.localeCompare(b.component));
 
+  // Unknown values fall back to the *least* trusted reading, never the most. A
+  // typo in `provenance` must not be able to inflate a confidence score.
   const provenanceRaw = str(raw.provenance, 'authored');
-  if (provenanceRaw !== 'git' && provenanceRaw !== 'authored') {
+  const provenance: Build['provenance'] =
+    provenanceRaw === 'git' ? 'git' : provenanceRaw === 'observed' ? 'observed' : 'authored';
+  if (provenanceRaw !== provenance) {
     warnings.push(`unknown provenance ${provenanceRaw} — treated as authored (lower confidence)`);
   }
 
@@ -125,7 +140,7 @@ export function parseBuild(input: unknown): Build {
     project: str(raw.project, 'untitled'),
     entry: str(raw.entry),
     tests: str(raw.tests),
-    provenance: provenanceRaw === 'git' ? 'git' : 'authored',
+    provenance,
     steps,
     failure: parseFailure(raw.failure, warnings),
     warnings,

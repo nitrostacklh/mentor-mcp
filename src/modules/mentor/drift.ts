@@ -247,7 +247,13 @@ function scoreConfidence(input: ScoreInput): ConfidenceBreakdown {
 
   const coverage = built.length === 0 ? 0 : (built.length - unplanned.length) / built.length;
   const determinism = orderDeterminism(plan);
-  const provenanceScore = build.provenance === 'git' ? 1 : 0.4;
+  // `observed` sits between the two originals on purpose. A checkpoint log
+  // (`learn/checkpoints.ts`) is written as the work happens, so the *sequence* —
+  // the only thing MENTOR's claim actually rests on — was witnessed rather than
+  // remembered. But the student is still the one who declared each checkpoint
+  // reached, and a declaration is not a commit. 0.8 prices in that gap and no more.
+  const provenanceScore =
+    build.provenance === 'git' ? 1 : build.provenance === 'observed' ? 0.8 : 0.4;
   // Checked against ALL steps, not just `implement` ones: a failure surfaces in a
   // test file, and test-file activity is recorded as a `verify` step. Matching
   // only implement steps would make this signal unreachable in the common case.
@@ -277,7 +283,10 @@ function scoreConfidence(input: ScoreInput): ConfidenceBreakdown {
       reason:
         build.provenance === 'git'
           ? 'history derived from real commits'
-          : 'history is hand-authored, not observed from commits — discounted',
+          : build.provenance === 'observed'
+            ? 'sequence recorded by the checkpoint tracker as the work happened, but each ' +
+              'checkpoint was self-reported rather than derived from a commit'
+            : 'history is hand-authored, not observed from commits — discounted',
     },
     failureLink: {
       score: failureLinked,
