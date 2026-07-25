@@ -1,3 +1,14 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// GENERATED FILE — do not edit here.
+//
+// The original is shared/plan.ts at the monorepo root. Three deployed services
+// need the same copy of the bridge contracts, and each deploys as a lone folder,
+// so the file is duplicated and the duplication is guarded:
+//
+//   npm run sync:shared            regenerate every copy
+//   npm run sync:shared -- --check fail if any copy has drifted (runs in verify)
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * The PLAN half of MENTOR's input — `lumina.plan/v1`.
  *

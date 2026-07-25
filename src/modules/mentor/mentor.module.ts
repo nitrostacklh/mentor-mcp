@@ -22,9 +22,9 @@ import { Engine } from '../../core/engine.js';
 import { aegisGuard } from '../aegis/trust.js';
 import { MentorAdapter, REFUSAL, mentorPlanner } from './mentor.adapter.js';
 import { findDrift } from './drift.js';
-import { parsePlan } from './plan.js';
+import { parsePlan } from '../../shared/plan.js';
 import { parseBuild } from './build.js';
-import { bundledBuild, bundledPlan, PRICING_SYMPTOM } from './fixtures.js';
+import { requireBuild, requirePlan, PRICING_SYMPTOM } from './fixtures.demo.js';
 import { issueCard, readTestOutcome } from '../learn/card.js';
 import { bundledBrief, bundledProjectArtifacts } from '../learn/fixtures.learn.js';
 
@@ -79,8 +79,8 @@ export class MentorTools {
     // Recompute the report for the structured payload the widget renders. Cheap
     // and pure, and it keeps the widget's contract independent of Incident's shape.
     const report = findDrift(
-      input.plan === undefined ? bundledPlan() : parsePlan(input.plan),
-      input.build === undefined ? bundledBuild() : parseBuild(input.build),
+      input.plan === undefined ? requirePlan() : parsePlan(input.plan),
+      input.build === undefined ? requireBuild() : parseBuild(input.build),
     );
 
     return {
@@ -196,13 +196,13 @@ export class MentorTools {
       const plan =
         input.plan === undefined
           ? input.project === 'pricing'
-            ? bundledPlan()
+            ? requirePlan()
             : (bundledProjectArtifacts(input.project)?.plan ?? null)
           : parsePlan(input.plan);
       const build =
         input.build === undefined
           ? input.project === 'pricing'
-            ? bundledBuild()
+            ? requireBuild()
             : (bundledProjectArtifacts(input.project)?.build ?? null)
           : parseBuild(input.build);
       if (plan && build) drift = findDrift(plan, build);
@@ -235,8 +235,8 @@ export class MentorTools {
     inputSchema: z.object({}),
   })
   async mentorStatus() {
-    const plan = bundledPlan();
-    const build = bundledBuild();
+    const plan = requirePlan();
+    const build = requireBuild();
     return {
       commander: 'MENTOR',
       domain: 'Education · Plan-vs-Build Drift',

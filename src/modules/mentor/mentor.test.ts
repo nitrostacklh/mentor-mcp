@@ -14,8 +14,8 @@ import { Engine } from '../../core/engine.js';
 import { aegisGuard } from '../aegis/trust.js';
 import { MentorAdapter, REFUSAL, mentorPlanner } from './mentor.adapter.js';
 import { MentorPrompts } from './mentor.module.js';
-import { PRICING_BUILD_SOURCE, PRICING_SYMPTOM, bundledBuild, bundledPlan } from './fixtures.js';
-import { parsePlan, PlanParseError } from './plan.js';
+import { PRICING_BUILD_SOURCE, PRICING_SYMPTOM, requireBuild, requirePlan } from './fixtures.demo.js';
+import { parsePlan, PlanParseError } from '../../shared/plan.js';
 import { parseBuild, BuildParseError } from './build.js';
 
 function run(sources = {}, opts: { approve?: boolean } = {}) {
@@ -229,7 +229,7 @@ test('accepts a caller-supplied plan and build instead of the bundled demo', asy
 });
 
 test('accepts artifacts as JSON strings as well as objects', () => {
-  const asObject = parsePlan(bundledPlan() as unknown as Record<string, unknown>);
+  const asObject = parsePlan(requirePlan() as unknown as Record<string, unknown>);
   assert.equal(asObject.order.length, 4);
   const asString = parseBuild(JSON.stringify({
     schema: 'mentor.build/v1',

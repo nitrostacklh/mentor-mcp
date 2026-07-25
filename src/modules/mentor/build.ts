@@ -22,6 +22,8 @@
  * Building the git deriver (`GAPS.md` Gap 5) raises the score honestly.
  */
 
+import { normalizeComponent } from '../../shared/component.js';
+
 export const BUILD_SCHEMA = 'mentor.build/v1';
 
 /** What kind of work a step was. Only `implement` steps define component order. */
@@ -174,14 +176,13 @@ export function actualLabels(build: Build): string[] {
 /**
  * Join key between a plan node's `label` and a build step's `component`.
  *
- * The two artifacts are authored by different halves of the system (a student
- * typing into a canvas, and a history deriver reading code), so an exact-string
- * join would fail on "Tax" vs "tax" and strand the drift. Case, surrounding
- * whitespace, and inner separators are not meaningful differences here.
+ * Re-exported from `shared/component.ts` rather than defined here, because all three
+ * deployed services have to normalise identically or the bridges silently miss — a
+ * checkpoint MCP-1 called "Check Helmet" would never match the `check helmet` MCP-2
+ * saw in a build event, and nothing would report an error. One definition, copied
+ * into each app by `npm run sync:shared`, guarded by its `--check` mode.
  */
-export function normalizeComponent(name: string): string {
-  return name.trim().toLowerCase().replace(/[\s_-]+/g, '');
-}
+export { normalizeComponent };
 
 // ── helpers ────────────────────────────────────────────────────────────────
 function parseFailure(v: unknown, warnings: string[]): BuildFailure | null {

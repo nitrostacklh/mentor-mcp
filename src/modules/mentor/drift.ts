@@ -39,7 +39,7 @@ import {
   orderDeterminism,
   plannedLabels,
   type Plan,
-} from './plan.js';
+} from '../../shared/plan.js';
 import { actualOrder, normalizeComponent, type Build, type BuildStep } from './build.js';
 
 /** Weights for the origin-claim confidence. Sums to 1. */

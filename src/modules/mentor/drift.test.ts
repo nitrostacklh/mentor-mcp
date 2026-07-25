@@ -11,9 +11,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { findDrift } from './drift.js';
-import { parsePlan, type Plan } from './plan.js';
+import { parsePlan, type Plan } from '../../shared/plan.js';
 import { parseBuild, type Build } from './build.js';
-import { bundledBuild, bundledPlan } from './fixtures.js';
+import { requireBuild, requirePlan } from './fixtures.demo.js';
 
 // ── builders ───────────────────────────────────────────────────────────────
 function plan(labels: string[], edges: Array<[number, number]>, opts: { cyclic?: boolean } = {}): Plan {
@@ -235,7 +235,7 @@ test('an unlinked failure costs the failureLink signal', () => {
 
 // ── the shipped demo ───────────────────────────────────────────────────────
 test('the bundled pricing demo produces the claim the concept doc promises', () => {
-  const report = findDrift(bundledPlan(), bundledBuild());
+  const report = findDrift(requirePlan(), requireBuild());
 
   assert.deepEqual(report.plannedOrder, ['validate', 'discount', 'tax', 'total']);
   assert.deepEqual(report.actualOrder, ['validate', 'tax', 'discount', 'total']);
@@ -264,9 +264,9 @@ test('the bundled pricing demo produces the claim the concept doc promises', () 
 test('fixing the demo history to git provenance raises confidence honestly', () => {
   // Guards the claim in build.ts: deriving history from real commits (GAPS.md
   // Gap 5) should improve the score, and by exactly the provenance weight.
-  const authored = findDrift(bundledPlan(), bundledBuild());
+  const authored = findDrift(requirePlan(), requireBuild());
   const asGit = findDrift(
-    bundledPlan(),
+    requirePlan(),
     parseBuild({ ...JSON.parse(JSON.stringify(bundledBuildRaw())), provenance: 'git' }),
   );
   assert.equal(authored.confidence.score, 0.91);
@@ -276,7 +276,7 @@ test('fixing the demo history to git provenance raises confidence honestly', () 
 
 /** The bundled build as a plain object, for provenance experiments. */
 function bundledBuildRaw(): Record<string, unknown> {
-  const b = bundledBuild();
+  const b = requireBuild();
   return {
     schema: b.schema,
     project: b.project,

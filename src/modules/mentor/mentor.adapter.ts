@@ -40,14 +40,14 @@ import type { BlastRadius, Incident, ToolResult } from '../../core/types.js';
 import type { DomainAdapter, EmitFn, IncidentContext } from '../../core/adapter.js';
 import type { EngineAction, Planner } from '../../core/engine.js';
 import { findDrift, renderAlignment, type DriftReport } from './drift.js';
-import { parsePlan, plannedLabels, type Plan } from './plan.js';
+import { parsePlan, plannedLabels, type Plan } from '../../shared/plan.js';
 import { actualLabels, parseBuild, type Build } from './build.js';
 import {
   PRICING_BUILD_SOURCE,
   PRICING_SYMPTOM,
-  bundledBuild,
-  bundledPlan,
-} from './fixtures.js';
+  requireBuild,
+  requirePlan,
+} from './fixtures.demo.js';
 
 /** Why MENTOR will not write the fix. Shown verbatim to the student. */
 export const REFUSAL =
@@ -113,8 +113,8 @@ export class MentorAdapter implements DomainAdapter {
   }
 
   openContext(incidentId: string): MentorCtx {
-    const plan = this.sources.plan === undefined ? bundledPlan() : parsePlan(this.sources.plan);
-    const build = this.sources.build === undefined ? bundledBuild() : parseBuild(this.sources.build);
+    const plan = this.sources.plan === undefined ? requirePlan() : parsePlan(this.sources.plan);
+    const build = this.sources.build === undefined ? requireBuild() : parseBuild(this.sources.build);
     const source = this.sources.source ?? PRICING_BUILD_SOURCE;
     return {
       incidentId,
