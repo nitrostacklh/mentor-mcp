@@ -2,46 +2,6 @@
   "version": "1.0.0",
   "widgets": [
     {
-      "uri": "/mission-trace",
-      "name": "Mission Trace",
-      "description": "Glass-box view of an autonomous incident: status, the explainable confidence gate, the live mission trace, and the resulting diff.",
-      "examples": [
-        {
-          "name": "Self-heal (autonomous)",
-          "description": "SENTINEL fixing the pricing regression",
-          "data": {
-            "status": "RESOLVED",
-            "fix_summary": "Compute tax on the discounted (taxable) amount, not the raw subtotal.",
-            "root_cause": "Tax was computed on the pre-discount subtotal, overcharging discounted orders.",
-            "verdict": {
-              "score": 0.93,
-              "threshold": 0.8,
-              "autonomous": true,
-              "components": {
-                "verification": { "score": 1, "weight": 0.4, "reason": "fix verified (all checks green)" },
-                "agent": { "score": 0.92, "weight": 0.25, "reason": "agent self-reported confidence 0.92" },
-                "iterations": { "score": 0.75, "weight": 0.2, "reason": "converged in 2 attempt(s)" },
-                "blastRadius": { "score": 1, "weight": 0.15, "reason": "1 file(s), 2 line(s) changed" }
-              }
-            },
-            "diff": "--- a/pricing.js\n+++ b/pricing.js\n-   const tax = subtotal * taxRate;\n+   const tax = taxable * taxRate;",
-            "trace": [
-              { "type": "incident.opened", "title": "Incident opened: discounted orders overcharged" },
-              { "type": "tool.call", "title": "read_logs()" },
-              { "type": "tests.result", "title": "❌ 2 failed, 1 passed" },
-              { "type": "patch.applied", "title": "Patch applied to pricing.js" },
-              { "type": "tests.result", "title": "✅ 3 passed" },
-              { "type": "confidence.verdict", "title": "Confidence 0.93 — autonomous deploy" },
-              { "type": "trust.checked", "title": "AEGIS trust 1 — cleared" },
-              { "type": "deploy.verified", "title": "Live service recovered" },
-              { "type": "incident.resolved", "title": "Resolved" }
-            ]
-          }
-        }
-      ],
-      "tags": ["sentinel", "command", "incident", "glass-box", "trace"]
-    },
-    {
       "uri": "/causal-timeline",
       "name": "Causal Timeline",
       "description": "MENTOR's plan-vs-build view: the architecture the student designed, the order they actually built in, the one component that moved, and the line it happened on — with confidence stated per signal and the fix deliberately withheld.",
@@ -68,15 +28,45 @@
               "line": 40,
               "message": "80 !== 72"
             },
-            "plan_row": ["validate", "discount", "tax", "total"],
-            "build_row": ["validate", "tax", "discount", "total"],
+            "plan_row": [
+              "validate",
+              "discount",
+              "tax",
+              "total"
+            ],
+            "build_row": [
+              "validate",
+              "tax",
+              "discount",
+              "total"
+            ],
             "confidence": 0.91,
             "confidence_components": {
-              "dependency": { "score": 1, "weight": 0.4, "reason": "the plan draws discount -> tax as a direct edge" },
-              "coverage": { "score": 1, "weight": 0.2, "reason": "every component built was in the plan" },
-              "determinism": { "score": 1, "weight": 0.15, "reason": "the plan is a strict chain — it orders every pair of components" },
-              "provenance": { "score": 0.4, "weight": 0.15, "reason": "history is hand-authored, not observed from commits — discounted" },
-              "failureLink": { "score": 1, "weight": 0.1, "reason": "the reported failure is in a file this history covers (build/pricing.test.js)" }
+              "dependency": {
+                "score": 1,
+                "weight": 0.4,
+                "reason": "the plan draws discount -> tax as a direct edge"
+              },
+              "coverage": {
+                "score": 1,
+                "weight": 0.2,
+                "reason": "every component built was in the plan"
+              },
+              "determinism": {
+                "score": 1,
+                "weight": 0.15,
+                "reason": "the plan is a strict chain — it orders every pair of components"
+              },
+              "provenance": {
+                "score": 0.4,
+                "weight": 0.15,
+                "reason": "history is hand-authored, not observed from commits — discounted"
+              },
+              "failureLink": {
+                "score": 1,
+                "weight": 0.1,
+                "reason": "the reported failure is in a file this history covers (build/pricing.test.js)"
+              }
             },
             "caveats": [],
             "fix_withheld": true,
@@ -87,7 +77,14 @@
           }
         }
       ],
-      "tags": ["mentor", "education", "drift", "causal", "glass-box", "plan-vs-build"]
+      "tags": [
+        "mentor",
+        "education",
+        "drift",
+        "causal",
+        "glass-box",
+        "plan-vs-build"
+      ]
     }
   ],
   "generatedAt": "2026-07-24T00:00:00.000Z"
