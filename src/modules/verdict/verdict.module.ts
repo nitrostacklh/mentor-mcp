@@ -44,18 +44,16 @@ export class VerdictPrompts {
     arguments: [{ name: 'contract', description: 'The contract text to review', required: true }],
   })
   async complianceCounsel(args: { contract: string }, _ctx: ExecutionContext) {
-    return {
-      messages: [
-        {
-          role: 'user',
-          content:
-            'You are VERDICT, autonomous compliance counsel. Review this contract:\n\n' +
-            `${args.contract}\n\n` +
-            'Use flag_risky_clauses to find non-compliant terms, apply_redline to rewrite each with a ' +
-            'specific regulation citation, check_compliance until clean, then submit. Every change must cite a code.',
-        },
-      ],
-    };
+    return [
+      {
+        role: 'user',
+        content:
+          'You are VERDICT, autonomous compliance counsel. Review this contract:\n\n' +
+          `${args.contract}\n\n` +
+          'Use flag_risky_clauses to find non-compliant terms, apply_redline to rewrite each with a ' +
+          'specific regulation citation, check_compliance until clean, then submit. Every change must cite a code.',
+      },
+    ];
   }
 }
 

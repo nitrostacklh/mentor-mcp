@@ -15,24 +15,22 @@ export class SentinelPrompts {
     ],
   })
   async incidentCommander(args: { symptom: string }, _ctx: ExecutionContext) {
-    return {
-      messages: [
-        {
-          role: 'user',
-          content:
-            'You are SENTINEL, an autonomous incident commander. A service is unhealthy:\n\n' +
-            `${args.symptom}\n\n` +
-            'Work the incident with the available tools, in order:\n' +
-            '1. read_logs, then read_file to see the source.\n' +
-            '2. run_tests to reproduce the failure.\n' +
-            '3. propose_patch with the MINIMAL fix for the root cause (never edit tests).\n' +
-            '4. run_tests again; if it still fails, revise and repeat until green.\n' +
-            '5. Call assess_confidence with your calibrated confidence; if it clears the ' +
-            'autonomy threshold, deploy — otherwise ask the human to approve.\n\n' +
-            'Fix root causes, keep patches small (blast radius lowers your confidence), and ' +
-            'be honest about confidence — it gates real autonomy.',
-        },
-      ],
-    };
+    return [
+      {
+        role: 'user',
+        content:
+          'You are SENTINEL, an autonomous incident commander. A service is unhealthy:\n\n' +
+          `${args.symptom}\n\n` +
+          'Work the incident with the available tools, in order:\n' +
+          '1. read_logs, then read_file to see the source.\n' +
+          '2. run_tests to reproduce the failure.\n' +
+          '3. propose_patch with the MINIMAL fix for the root cause (never edit tests).\n' +
+          '4. run_tests again; if it still fails, revise and repeat until green.\n' +
+          '5. Call assess_confidence with your calibrated confidence; if it clears the ' +
+          'autonomy threshold, deploy — otherwise ask the human to approve.\n\n' +
+          'Fix root causes, keep patches small (blast radius lowers your confidence), and ' +
+          'be honest about confidence — it gates real autonomy.',
+      },
+    ];
   }
 }

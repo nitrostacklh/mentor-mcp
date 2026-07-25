@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { Engine } from '../../core/engine.js';
 import { aegisGuard } from '../aegis/trust.js';
 import { MentorAdapter, REFUSAL, mentorPlanner } from './mentor.adapter.js';
+import { MentorPrompts } from './mentor.module.js';
 import { PRICING_BUILD_SOURCE, PRICING_SYMPTOM, bundledBuild, bundledPlan } from './fixtures.js';
 import { parsePlan, PlanParseError } from './plan.js';
 import { parseBuild, BuildParseError } from './build.js';
@@ -308,4 +309,52 @@ test('an ungrounded claim escalates rather than pointing at a line', async () =>
   const abstained = incident.actions.find((a) => a.kind === 'mentor_abstained');
   assert.ok(abstained, 'MENTOR must say it does not know rather than guess');
   assert.match(String(abstained?.message), /could not locate the drift/i);
+});
+
+/**
+ * The prompt contract, which nothing tested until an end-to-end MCP sweep hit
+ * `prompts/get` and got `Invalid prompt message role: 'undefined'`.
+ *
+ * @nitrostack/core's `normalizePromptResponse` does:
+ *     const arrayResult = Array.isArray(result) ? result : [result];
+ *     return arrayResult.map(validateMessageFormat);
+ *
+ * So returning `{ messages: [...] }` makes the framework treat the *wrapper* as
+ * a single message, whose `role` is undefined — and the prompt fails at runtime
+ * while compiling perfectly. The contract is an array of messages. These
+ * assertions mirror `validateMessageFormat` exactly.
+ */
+test('debugging_tutor returns the array-of-messages shape the framework requires', async () => {
+  const result: any = await new MentorPrompts().debuggingTutor(
+    { symptom: 'my pricing test fails' },
+    {} as any,
+  );
+
+  assert.ok(
+    Array.isArray(result),
+    'must return an array of messages, not { messages: [...] } — see the comment above',
+  );
+  assert.ok(result.length > 0, 'must return at least one message');
+
+  for (const msg of result) {
+    assert.ok(
+      ['user', 'assistant', 'system'].includes(msg.role),
+      `role must be user|assistant|system, got '${msg.role}'`,
+    );
+    assert.equal(typeof msg.content, 'string', 'content must be a string');
+    assert.ok(msg.content.length > 0, 'content must not be empty');
+  }
+});
+
+test('debugging_tutor carries the symptom and the refusal instruction', async () => {
+  const result: any = await new MentorPrompts().debuggingTutor(
+    { symptom: 'discounted orders are overcharged' },
+    {} as any,
+  );
+  const text = result.map((m: any) => m.content).join('\n');
+
+  assert.match(text, /discounted orders are overcharged/, 'the symptom reaches the model');
+  assert.match(text, /explain_drift/, 'it tells the model which tool to call');
+  assert.match(text, /withhold_fix/, 'it routes fix requests to the refusal');
+  assert.match(text, /NOT write/, 'the refusal is stated, not implied');
 });

@@ -43,19 +43,17 @@ export class RelayPrompts {
     arguments: [{ name: 'request', description: "The citizen's situation / need", required: true }],
   })
   async civicCopilot(args: { request: string }, _ctx: ExecutionContext) {
-    return {
-      messages: [
-        {
-          role: 'user',
-          content:
-            'You are RELAY, an autonomous civic-services copilot. A citizen needs help:\n\n' +
-            `${args.request}\n\n` +
-            'Use match_schemes and check_eligibility to find what they qualify for, prefill_form to ' +
-            'complete the application, validate_application until it is complete and eligible, then submit. ' +
-            'Never submit an incomplete or ineligible application.',
-        },
-      ],
-    };
+    return [
+      {
+        role: 'user',
+        content:
+          'You are RELAY, an autonomous civic-services copilot. A citizen needs help:\n\n' +
+          `${args.request}\n\n` +
+          'Use match_schemes and check_eligibility to find what they qualify for, prefill_form to ' +
+          'complete the application, validate_application until it is complete and eligible, then submit. ' +
+          'Never submit an incomplete or ineligible application.',
+      },
+    ];
   }
 }
 

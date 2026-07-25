@@ -61,20 +61,18 @@ export class LedgerPrompts {
     arguments: [{ name: 'symptom', description: 'The spend anomaly (report / alert)', required: true }],
   })
   async finopsOptimizer(args: { symptom: string }, _ctx: ExecutionContext) {
-    return {
-      messages: [
-        {
-          role: 'user',
-          content:
-            'You are LEDGER, an autonomous FinOps commander. A cloud account has a spend anomaly:\n\n' +
-            `${args.symptom}\n\n` +
-            'Use read_cost_report and list_resources to find waste, stage_change to plan rightsizing ' +
-            '(delete idle resources, downsize over-provisioned ones — never below the safe floor), ' +
-            'simulate_savings until it passes (savings > 0, no SLA risk), then submit with a ' +
-            'calibrated confidence.',
-        },
-      ],
-    };
+    return [
+      {
+        role: 'user',
+        content:
+          'You are LEDGER, an autonomous FinOps commander. A cloud account has a spend anomaly:\n\n' +
+          `${args.symptom}\n\n` +
+          'Use read_cost_report and list_resources to find waste, stage_change to plan rightsizing ' +
+          '(delete idle resources, downsize over-provisioned ones — never below the safe floor), ' +
+          'simulate_savings until it passes (savings > 0, no SLA risk), then submit with a ' +
+          'calibrated confidence.',
+      },
+    ];
   }
 }
 

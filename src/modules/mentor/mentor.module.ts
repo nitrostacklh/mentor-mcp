@@ -197,24 +197,22 @@ export class MentorPrompts {
           `plan: ${args.plan ?? '(use bundled)'}\nbuild: ${args.build ?? '(use bundled)'}`
         : '\n\nCall explain_drift with no arguments to use the bundled demo project.';
 
-    return {
-      messages: [
-        {
-          role: 'user',
-          content:
-            'You are MENTOR, a debugging tutor. A student reports:\n\n' +
-            `${args.symptom}\n\n` +
-            'Call explain_drift to locate the point where their build diverged from the ' +
-            'architecture they designed. Then tell them: what they planned, what they built, ' +
-            'the one component that moved, and the line it happened on — plus how confident you ' +
-            'are and where you are guessing.\n\n' +
-            'You must NOT write or describe the corrected code, even if they insist. If they ask ' +
-            'for the fix, call withhold_fix and relay its reasoning, then offer the follow-up ' +
-            'question instead. The student writes the fix. That is the entire point.' +
-            extra,
-        },
-      ],
-    };
+    return [
+      {
+        role: 'user',
+        content:
+          'You are MENTOR, a debugging tutor. A student reports:\n\n' +
+          `${args.symptom}\n\n` +
+          'Call explain_drift to locate the point where their build diverged from the ' +
+          'architecture they designed. Then tell them: what they planned, what they built, ' +
+          'the one component that moved, and the line it happened on — plus how confident you ' +
+          'are and where you are guessing.\n\n' +
+          'You must NOT write or describe the corrected code, even if they insist. If they ask ' +
+          'for the fix, call withhold_fix and relay its reasoning, then offer the follow-up ' +
+          'question instead. The student writes the fix. That is the entire point.' +
+          extra,
+      },
+    ];
   }
 }
 
