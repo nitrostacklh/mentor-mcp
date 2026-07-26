@@ -80,13 +80,25 @@ function nextId(project: string, role: string): string {
   return `s-${project}-${role}-${counter}`;
 }
 
-export function openSession(input: {
+/**
+ * A session that is never registered, for the stateless path.
+ *
+ * `build_verdict` accepts the spec, the plan and the events inline, and that path
+ * has to normalise events exactly the way a real session does — same server-assigned
+ * sequence, same `T+…` fallback — or a client that holds its own history would get a
+ * subtly different verdict from one that streamed. So it borrows the same object and
+ * the same `ingest`, and simply never goes in the map.
+ *
+ * It still consumes an id from the counter. That is deliberate: an id that appears in
+ * a log should never turn out to belong to two different things.
+ */
+export function detachedSession(input: {
   spec: CheckpointSpec;
   plan: Plan;
   student?: string;
 }): Session {
   const student = (input.student ?? input.spec.student ?? 'anonymous').trim() || 'anonymous';
-  const session: Session = {
+  return {
     id: nextId(input.spec.project, input.spec.role),
     student,
     project: input.spec.project,
@@ -97,6 +109,15 @@ export function openSession(input: {
     openedAt: new Date().toISOString(),
     touchedAt: Date.now(),
   };
+}
+
+export function openSession(input: {
+  spec: CheckpointSpec;
+  plan: Plan;
+  student?: string;
+}): Session {
+  const session = detachedSession(input);
+  const student = session.student;
 
   // Reopening the same seat for the same student supersedes the old session. A
   // student who redraws their design and re-derives their gates has a new intent,

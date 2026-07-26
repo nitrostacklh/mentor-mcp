@@ -1,5 +1,6 @@
 import { McpApp, Module, ConfigModule } from '@nitrostack/core';
 import { MentorModule } from './modules/mentor/mentor.module.js';
+import { VerifyModule } from './modules/verify/verify.module.js';
 import { SystemHealthCheck } from './health/system.health.js';
 
 // ── MCP-2 of three. One stage of the loop, not the whole of it ────────────────
@@ -90,6 +91,13 @@ import { SystemHealthCheck } from './health/system.health.js';
     'You did not just write the bug; you designed it.',
   imports: [
     ConfigModule.forRoot(),
+    // The two halves of MCP-2's one story. VerifyModule watches a build against the
+    // spec MCP-1 issued and files the verdict MCP-3 makes a card from; MentorModule
+    // explains the drift it found and refuses to write the fix. `modules/verify/`
+    // arrived with the three-way split and was unregistered until now, which is why
+    // MCP-1's `open_session` hand-off and MCP-3's `build_verdict` gate both pointed at
+    // tools that did not exist.
+    VerifyModule,
     MentorModule
   ],
   providers: [
