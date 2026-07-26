@@ -70,10 +70,12 @@ bug and watch `withhold_fix` decline. That refusal is the product, not a missing
 
 ## The tool surface is deliberately one story
 
-`tools/list` returns **13 tools**: the ten stages of the loop above, plus three from
-**REGISTRAR** — `whoami`, `resume` and `class_progress` — which cover identity and picking up
-work from a previous session. That is a design constraint rather than an accident: in an MCP
-app the tool list *is* the interface, because the client's model picks from it.
+`tools/list` returns **6 tools** on this app: `open_session`, `build_event` and
+`build_verdict` — watch a build against the spec MCP-1 issued and file the verdict MCP-3 makes
+a card from — plus `explain_drift`, `withhold_fix` and `mentor_status`. That is MCP-2's whole
+story and only MCP-2's; the other two thirds of the loop are separate deployments
+(`mcp-roster` 8 tools, `mcp-profile` 9). It is a design constraint rather than an accident: in
+an MCP app the tool list *is* the interface, because the client's model picks from it.
 
 Notably persistence itself added **no** verbs. There is no `save`, and deliberately no
 `query` or `execute_sql`: a generic database tool would hand the client's model arbitrary
